@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="theme-color" content="#080810"/>
   <title>StreamTV</title>
+  <link rel="manifest" href="data:application/json,{%22name%22:%22StreamTV%22,%22short_name%22:%22StreamTV%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23080810%22,%22theme_color%22:%22%23ff3d6e%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20512%20512%27%3E%3Crect%20width=%27512%27%20height=%27512%27%20rx=%27100%27%20fill=%27%23ff3d6e%27/%3E%3Cpath%20d=%27M180%20140v232l192-116z%27%20fill=%27white%27/%3E%3C/svg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]}"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="application-name" content="StreamTV"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
@@ -62,20 +65,21 @@
     /* MAIN */
     main { overflow: hidden; position: relative; display: flex; flex-direction: column; }
 
-    .view { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; display: none; flex-direction: column; }
+    .view { position: absolute; inset: 0; overflow: hidden; display: none; flex-direction: column; background: var(--bg); }
     .view.active { display: flex; }
 
     /* PLAYER */
-    #view-player { background: var(--bg); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    #view-player { background: #000; display: flex; flex-direction: column; overflow: hidden; }
 
-    .video-wrap { position: relative; width: 100%; background: #000; flex-shrink: 0; }
-    video { width: 100%; aspect-ratio: 16/9; display: block; object-fit: contain; max-height: 56vw; }
+    .video-wrap { position: relative; width: 100%; flex-shrink: 0; background: #000; }
+    video { width: 100%; aspect-ratio: 16/9; display: block; object-fit: contain; background: #000; }
 
     .video-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
     .video-overlay.loading .spinner { display: block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .player-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
     .player-info { padding: 14px 16px 8px; background: var(--s1); border-bottom: 1px solid var(--border); }
     .now-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px; }
     .now-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; }
@@ -200,34 +204,36 @@
         <video id="video" playsinline webkit-playsinline controls></video>
         <div class="video-overlay" id="overlay"><div class="spinner"></div></div>
       </div>
-      <div class="player-info" id="playerInfo" style="display:none">
-        <div class="now-label">Now Playing</div>
-        <div class="now-name" id="nowName">—</div>
-        <div class="live-row"><div class="live-pill"><div class="live-dot"></div>Live</div></div>
-      </div>
-      <div class="player-btns" id="playerBtns" style="display:none">
-        <button class="p-btn" onclick="copyUrl()">
-          <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          <span>Copy URL</span>
-        </button>
-        <button class="p-btn" onclick="openVLC()">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-          <span>VLC</span>
-        </button>
-        <button class="p-btn" onclick="reloadStream()">
-          <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-          <span>Reload</span>
-        </button>
-        <button class="p-btn" onclick="goFullscreen()">
-          <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-          <span>Full</span>
-        </button>
-      </div>
-      <div class="error-box" id="errorBox"></div>
-      <div class="empty-state" id="emptyPlayer">
-        <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M21 3H3c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.11-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg></div>
-        <div class="empty-title">Nothing playing</div>
-        <div class="empty-sub">Pick a channel from the Channels tab</div>
+      <div class="player-scroll">
+        <div class="player-info" id="playerInfo" style="display:none">
+          <div class="now-label">Now Playing</div>
+          <div class="now-name" id="nowName">—</div>
+          <div class="live-row"><div class="live-pill"><div class="live-dot"></div>Live</div></div>
+        </div>
+        <div class="player-btns" id="playerBtns" style="display:none">
+          <button class="p-btn" onclick="copyUrl()">
+            <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            <span>Copy URL</span>
+          </button>
+          <button class="p-btn" onclick="openVLC()">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+            <span>VLC</span>
+          </button>
+          <button class="p-btn" onclick="reloadStream()">
+            <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            <span>Reload</span>
+          </button>
+          <button class="p-btn" onclick="goFullscreen()">
+            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            <span>Full</span>
+          </button>
+        </div>
+        <div class="error-box" id="errorBox"></div>
+        <div class="empty-state" id="emptyPlayer">
+          <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M21 3H3c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.11-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg></div>
+          <div class="empty-title">Nothing playing</div>
+          <div class="empty-sub">Pick a channel from the Channels tab</div>
+        </div>
       </div>
     </div>
 
@@ -692,8 +698,24 @@ function escHtml(s) {
 }
 
 // ── INIT ──
-purgeExistingChannels(); // clean any cached non-live channels
+purgeExistingChannels();
 renderChannels();
+
+// ── PWA SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+    self.addEventListener('fetch', e => {
+      // Only cache app shell, not streams
+      if (e.request.url.includes('m3u8') || e.request.url.includes('workers.dev')) return;
+      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
 </script>
 </body>
 </html>

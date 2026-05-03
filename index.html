@@ -38,7 +38,7 @@
       pointer-events: none; z-index: 0;
     }
 
-    .app { position: relative; z-index: 1; display: grid; grid-template-rows: auto 1fr auto; height: 100dvh; height: 100vh; }
+    .app { position: relative; z-index: 1; display: grid; grid-template-rows: auto 1fr auto; height: 100dvh; min-height: 100vh; }
 
     /* HEADER */
     header {
@@ -66,10 +66,10 @@
     .view.active { display: flex; }
 
     /* PLAYER */
-    #view-player { background: #000; display: flex; flex-direction: column; overflow-y: auto; }
+    #view-player { background: var(--bg); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
-    .video-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; flex-shrink: 0; max-height: 56vw; }
-    video { width: 100%; height: 100%; display: block; object-fit: contain; }
+    .video-wrap { position: relative; width: 100%; background: #000; flex-shrink: 0; }
+    video { width: 100%; aspect-ratio: 16/9; display: block; object-fit: contain; max-height: 56vw; }
 
     .video-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
@@ -161,8 +161,8 @@
     .playlist-note { font-size: 10px; color: var(--muted); text-align: center; margin-bottom: 20px; }
 
     /* NAV */
-    nav { display: flex; background: var(--s1); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 9px; cursor: pointer; color: var(--muted); transition: color 0.15s; -webkit-tap-highlight-color: transparent; }
+    nav { display: flex; background: var(--s1); border-top: 1px solid var(--border); padding-bottom: max(var(--safe-bottom), 8px); flex-shrink: 0; position: relative; z-index: 10; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0 10px; cursor: pointer; color: var(--muted); transition: color 0.15s; -webkit-tap-highlight-color: transparent; min-height: 56px; }
     .nav-item.active { color: var(--accent); }
     .nav-item svg { width: 19px; height: 19px; fill: currentColor; }
     .nav-item span { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -385,38 +385,57 @@ function parseM3U(text) {
   return channels;
 }
 
-// ── CURATE FILTER ──
+// ── CURATE FILTER — strict whitelist approach ──
 function isLiveChannel(ch) {
-  const name = ch.name.toLowerCase();
-  const group = (ch.group || '').toLowerCase();
+  const name = ch.name.toLowerCase().trim();
+  const group = (ch.group || '').toLowerCase().trim();
 
-  // ── Blocked specific channels (by name fragment) ──
+  // ── Blocked specific channel names ──
   const blockedNames = [
     'iegcqt', 'pcnelid', 'eixo do mal', 'o outro lado',
     '100 ou mais', 'o planeta vivo', 'sem moderacao', 'sem moderação',
+    'debates', 'debate',
   ];
   if (blockedNames.some(b => name.includes(b))) return false;
 
-  // ── Block VOD / series / dated content ──
-  // Dates like S01E01, 2024-01-01, "01-01", episode patterns
-  if (/s\d{2}e\d{2}/i.test(ch.name)) return false;       // S01E01
-  if (/(ep|episode|temporada|season)/i.test(ch.name)) return false;
-  if (/20\d{2}[-_.]\d{2}[-_.]\d{2}/.test(ch.name)) return false;  // 2024-01-01
-  if (/\d{2}[-_.]\d{2}[-_.]\d{4}/.test(ch.name)) return false;    // 01-01-2024
-  if (/\d{4}[-_.]\d{2}[-_.]\d{2}/.test(ch.name)) return false;    // date format
+  // ── Blocked groups (exact or contains) ──
+  const blockedGroups = [
+    '100 ou mais', 'o planeta vivo', 'eixo do mal', 'o outro lado',
+    'pcnelid', 'iegcqt', 'sem moderação', 'sem moderacao', 'debates',
+    'vod', 'filmes', 'movies', 'series', 'séries', 'temporadas',
+    'documentários', 'documentarios', 'anime', 'kids', 'infantil',
+  ];
+  if (blockedGroups.some(b => group.includes(b))) return false;
 
-  // ── Keep only live groups ──
-  const liveGroups = ['tv', 'rádio', 'radio', 'webcam', 'webcams', 'câmera', 'camera', 'live', 'direto', 'directo', 'desporto', 'sport', 'notícias', 'noticias', 'informação', 'informacao', 'entretenimento', 'entertainment', 'música', 'musica'];
-  const vodGroups  = ['vod', 'filmes', 'movies', 'series', 'séries', 'documentários', 'documentarios', 'anime'];
+  // ── Only allow these groups (whitelist) ──
+  const allowedGroups = [
+    'tv', 'rádio', 'radio', 'webcam', 'beachcam', 'câmera', 'camera',
+    'desporto', 'sport', 'notícias', 'noticias', 'entretenimento',
+    'entertainment', 'música', 'musica', 'informação', 'informacao',
+    'custom', // user-added manual channels
+  ];
+  const groupAllowed = allowedGroups.some(a => group.includes(a));
+  if (!groupAllowed) return false;
 
-  // If group explicitly looks like VOD — skip
-  if (vodGroups.some(v => group.includes(v))) return false;
-
-  // If no group match at all but name looks like a file/episode, skip
-  // e.g. names that are just numbers, or long date strings
-  if (/^\d{4,}$/.test(ch.name.trim())) return false;
+  // ── Block episode/season/date patterns in name ──
+  if (/s\d{2}e\d{2}/i.test(name)) return false;
+  if (/(ep\.?|episode|temporada|season)\s*\d/i.test(name)) return false;
+  if (/20\d{2}[-_.]\d{2}[-_.]\d{2}/.test(name)) return false;
+  if (/\d{2}[-_.]\d{2}[-_.]\d{4}/.test(name)) return false;
+  if (/^\d{4,}$/.test(name)) return false;
 
   return true;
+}
+
+// Apply filter to existing cached channels
+function purgeExistingChannels() {
+  const before = allChannels.length;
+  allChannels = allChannels.filter(isLiveChannel);
+  const removed = before - allChannels.length;
+  if (removed > 0) {
+    saveChannels();
+    console.log(`Purged ${removed} non-live channels from cache`);
+  }
 }
 
 // ── LOAD M3UPT PLAYLIST ──
@@ -673,6 +692,7 @@ function escHtml(s) {
 }
 
 // ── INIT ──
+purgeExistingChannels(); // clean any cached non-live channels
 renderChannels();
 </script>
 </body>

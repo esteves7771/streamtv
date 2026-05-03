@@ -91,7 +91,7 @@
     /* ══════════════════════════════
        PLAYER VIEW
     ══════════════════════════════ */
-    #view-player { background: #000; }
+    #view-player { background: var(--bg); }
 
     .video-wrap {
       flex-shrink: 0;
@@ -132,9 +132,11 @@
     /* Scrollable area below video */
     .player-body {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       background: var(--bg);
+      padding-bottom: 12px;
     }
 
     .player-info {
@@ -249,9 +251,6 @@
       background: var(--s1);
       border-top: 1px solid var(--border);
       padding-bottom: env(safe-area-inset-bottom);
-      /* sticky ensures it never floats up */
-      position: sticky;
-      bottom: 0;
       z-index: 100;
     }
 

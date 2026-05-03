@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="application-name" content="StreamTV"/>
-  <meta name="theme-color" content="#080810"/>
-  <title>StreamTV</title>
+  <meta name="application-name" content="TV Tuga"/>
+  <meta name="theme-color" content="#0a0a0a"/>
+  <title>TV Tuga</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
@@ -31,12 +31,12 @@
     html, body {
       height: 100%;
       width: 100%;
+      margin: 0;
+      padding: 0;
       background: var(--bg);
       color: var(--text);
       font-family: 'JetBrains Mono', monospace;
       overflow: hidden;
-      /* Prevent bounce scroll on iOS */
-      position: fixed;
     }
 
     /* ── APP SHELL — true fullscreen on mobile ── */
@@ -44,11 +44,13 @@
       display: flex;
       flex-direction: column;
       width: 100%;
-      height: 100%;
+      height: 100vh;
       height: 100dvh;
-      /* iOS safe areas */
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--bg);
+      /* top safe area only — bottom handled by nav */
       padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
     }
 
     /* ── HEADER ── */
@@ -62,10 +64,8 @@
       gap: 10px;
     }
 
-    .logo { display: flex; align-items: center; gap: 9px; }
-    .logo-mark { width: 28px; height: 28px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
-    .logo-mark svg { width: 14px; height: 14px; fill: #fff; }
-    .logo-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; background: linear-gradient(90deg, var(--text), var(--muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo { display: flex; align-items: center; }
+    .logo-img { height: 36px; width: auto; object-fit: contain; }
     .header-right { margin-left: auto; display: flex; gap: 8px; }
     .icon-btn { width: 32px; height: 32px; background: var(--s2); border: 1px solid var(--border2); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); }
     .icon-btn svg { width: 15px; height: 15px; fill: currentColor; }
@@ -241,14 +241,15 @@
     .divider-text { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
     /* ══════════════════════════════
-       BOTTOM NAV — always visible
+       BOTTOM NAV — fixed to bottom, safe area aware
     ══════════════════════════════ */
     nav {
       flex-shrink: 0;
       display: flex;
       background: var(--s1);
       border-top: 1px solid var(--border);
-      /* No extra padding — we already handled safe-area on .app */
+      /* Extend into iPhone home indicator area */
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .nav-item {
@@ -258,11 +259,12 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      padding: 12px 0 11px;
+      padding: 12px 0 12px;
       cursor: pointer;
       color: var(--muted);
       transition: color 0.15s;
       -webkit-tap-highlight-color: transparent;
+      min-height: 54px;
     }
     .nav-item.active { color: var(--accent); }
     .nav-item svg { width: 20px; height: 20px; fill: currentColor; }
@@ -279,8 +281,7 @@
   <!-- HEADER -->
   <header>
     <div class="logo">
-      <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-      <span class="logo-name">StreamTV</span>
+      <img src="logo.png" alt="TV Tuga" class="logo-img"/>
     </div>
     <div class="header-right">
       <div class="icon-btn" onclick="goFullscreen()">

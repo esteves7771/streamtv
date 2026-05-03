@@ -38,19 +38,18 @@
       font-family: 'JetBrains Mono', monospace;
       overflow: hidden;
     }
+    html { background: var(--bg); }
 
-    /* ── APP SHELL — true fullscreen on mobile ── */
+    /* ── APP SHELL — flex column, true fullscreen ── */
     .app {
       display: flex;
       flex-direction: column;
       width: 100%;
       height: 100vh;
       height: 100dvh;
-      min-height: 100vh;
-      min-height: 100dvh;
       background: var(--bg);
-      /* top safe area only — bottom handled by nav */
       padding-top: env(safe-area-inset-top);
+      overflow: hidden;
     }
 
     /* ── HEADER ── */
@@ -70,11 +69,12 @@
     .icon-btn { width: 32px; height: 32px; background: var(--s2); border: 1px solid var(--border2); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); }
     .icon-btn svg { width: 15px; height: 15px; fill: currentColor; }
 
-    /* ── MAIN — takes all remaining space ── */
+    /* ── MAIN — flex:1 pushes nav to bottom ── */
     main {
       flex: 1;
-      min-height: 0; /* crucial for flex children to scroll */
+      min-height: 0; /* crucial — lets flex child shrink/scroll */
       position: relative;
+      overflow: hidden;
     }
 
     /* ── VIEWS — absolutely fill main ── */
@@ -241,15 +241,18 @@
     .divider-text { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
     /* ══════════════════════════════
-       BOTTOM NAV — fixed to bottom, safe area aware
+       BOTTOM NAV — stays at bottom via flex, safe area aware
     ══════════════════════════════ */
     nav {
       flex-shrink: 0;
       display: flex;
       background: var(--s1);
       border-top: 1px solid var(--border);
-      /* Extend into iPhone home indicator area */
       padding-bottom: env(safe-area-inset-bottom);
+      /* sticky ensures it never floats up */
+      position: sticky;
+      bottom: 0;
+      z-index: 100;
     }
 
     .nav-item {

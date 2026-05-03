@@ -66,9 +66,9 @@
     .view.active { display: flex; }
 
     /* PLAYER */
-    #view-player { background: #000; }
+    #view-player { background: #000; display: flex; flex-direction: column; overflow-y: auto; }
 
-    .video-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; flex-shrink: 0; }
+    .video-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; flex-shrink: 0; max-height: 56vw; }
     video { width: 100%; height: 100%; display: block; object-fit: contain; }
 
     .video-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -98,21 +98,22 @@
     .empty-sub { font-size: 11px; color: var(--muted); line-height: 1.6; max-width: 240px; }
 
     /* CHANNELS */
-    #view-channels { background: var(--bg); }
+    #view-channels { background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
 
+    .ch-sticky { flex-shrink: 0; background: var(--bg); border-bottom: 1px solid var(--border); }
     .ch-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
-    .search-box { flex: 1; background: var(--s1); border: 1px solid var(--border2); border-radius: 8px; padding: 9px 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px; outline: none; }
+    .search-box { flex: 1; background: var(--s1); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; min-width: 0; -webkit-appearance: none; }
     .search-box::placeholder { color: var(--muted); }
     .search-box:focus { border-color: var(--accent)66; }
 
     .group-tabs { display: flex; gap: 6px; padding: 0 14px 10px; overflow-x: auto; scrollbar-width: none; }
     .group-tabs::-webkit-scrollbar { display: none; }
-    .gtab { flex-shrink: 0; background: var(--s1); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 10px; letter-spacing: 0.08em; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .gtab { flex-shrink: 0; background: var(--s1); border: 1px solid var(--border); border-radius: 20px; padding: 6px 13px; font-size: 11px; letter-spacing: 0.06em; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
     .gtab.active { background: var(--accent)20; border-color: var(--accent)60; color: var(--accent); }
 
-    .channel-list { padding: 0 12px; flex: 1; }
+    .channel-list { padding: 10px 12px 12px; flex: 1; overflow-y: auto; overflow-x: hidden; }
 
-    .channel-card { display: flex; align-items: center; gap: 10px; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; margin-bottom: 7px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
+    .channel-card { display: flex; align-items: center; gap: 10px; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; -webkit-tap-highlight-color: transparent; }
     .channel-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 3px 0 0 3px; opacity: 0; transition: opacity 0.15s; }
     .channel-card.playing::before { opacity: 1; }
     .channel-card.playing { background: var(--s2); border-color: var(--border2); }
@@ -232,11 +233,13 @@
 
     <!-- CHANNELS -->
     <div class="view" id="view-channels">
-      <div class="ch-toolbar">
-        <input class="search-box" id="searchBox" type="text" placeholder="Search channels..." oninput="filterChannels()"/>
-        <span class="ch-count" id="chCount">0</span>
+      <div class="ch-sticky">
+        <div class="ch-toolbar">
+          <input class="search-box" id="searchBox" type="search" placeholder="🔍  Search channels..." oninput="filterChannels()"/>
+          <span class="ch-count" id="chCount">0</span>
+        </div>
+        <div class="group-tabs" id="groupTabs"></div>
       </div>
-      <div class="group-tabs" id="groupTabs"></div>
       <div class="channel-list" id="channelList"></div>
     </div>
 
@@ -249,7 +252,11 @@
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
         Load Portuguese TV Playlist
       </button>
-      <p class="playlist-note">Loads RTP 1/2/3, SIC, TVI, CNN Portugal and more — free & legal</p>
+      <button class="playlist-btn" style="border-color:var(--muted)44;color:var(--muted);margin-top:8px" onclick="clearAndReload()">
+        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        Clear All &amp; Reload Fresh
+      </button>
+      <p class="playlist-note">Live TV, Radio &amp; Webcams only — VOD, series and dated content filtered out</p>
 
       <div class="divider">
         <div class="divider-line"></div>
@@ -378,6 +385,40 @@ function parseM3U(text) {
   return channels;
 }
 
+// ── CURATE FILTER ──
+function isLiveChannel(ch) {
+  const name = ch.name.toLowerCase();
+  const group = (ch.group || '').toLowerCase();
+
+  // ── Blocked specific channels (by name fragment) ──
+  const blockedNames = [
+    'iegcqt', 'pcnelid', 'eixo do mal', 'o outro lado',
+    '100 ou mais', 'o planeta vivo', 'sem moderacao', 'sem moderação',
+  ];
+  if (blockedNames.some(b => name.includes(b))) return false;
+
+  // ── Block VOD / series / dated content ──
+  // Dates like S01E01, 2024-01-01, "01-01", episode patterns
+  if (/s\d{2}e\d{2}/i.test(ch.name)) return false;       // S01E01
+  if (/(ep|episode|temporada|season)/i.test(ch.name)) return false;
+  if (/20\d{2}[-_.]\d{2}[-_.]\d{2}/.test(ch.name)) return false;  // 2024-01-01
+  if (/\d{2}[-_.]\d{2}[-_.]\d{4}/.test(ch.name)) return false;    // 01-01-2024
+  if (/\d{4}[-_.]\d{2}[-_.]\d{2}/.test(ch.name)) return false;    // date format
+
+  // ── Keep only live groups ──
+  const liveGroups = ['tv', 'rádio', 'radio', 'webcam', 'webcams', 'câmera', 'camera', 'live', 'direto', 'directo', 'desporto', 'sport', 'notícias', 'noticias', 'informação', 'informacao', 'entretenimento', 'entertainment', 'música', 'musica'];
+  const vodGroups  = ['vod', 'filmes', 'movies', 'series', 'séries', 'documentários', 'documentarios', 'anime'];
+
+  // If group explicitly looks like VOD — skip
+  if (vodGroups.some(v => group.includes(v))) return false;
+
+  // If no group match at all but name looks like a file/episode, skip
+  // e.g. names that are just numbers, or long date strings
+  if (/^\d{4,}$/.test(ch.name.trim())) return false;
+
+  return true;
+}
+
 // ── LOAD M3UPT PLAYLIST ──
 async function loadM3UPT() {
   showView('channels');
@@ -394,19 +435,23 @@ async function loadM3UPT() {
     const parsed = parseM3U(text);
     if (parsed.length === 0) throw new Error('No channels found');
 
+    // Apply live-only filter
+    const curated = parsed.filter(isLiveChannel);
+
     // Merge with existing — avoid duplicates by URL
     const existingUrls = new Set(allChannels.map(c => c.url));
     let added = 0;
-    for (const ch of parsed) {
+    for (const ch of curated) {
       if (!existingUrls.has(ch.url)) {
         allChannels.push(ch);
         added++;
       }
     }
+    const skipped = parsed.length - curated.length;
 
     saveChannels();
     renderChannels();
-    toast(`✅ Loaded ${added} channels`);
+    toast(`✅ ${added} channels loaded (${skipped} filtered out)`);
 
   } catch (err) {
     list.innerHTML = '';
@@ -559,6 +604,15 @@ function showError(msg) {
 }
 
 function reloadStream() { if (currentChannel) loadStream(currentChannel); }
+
+// ── CLEAR AND RELOAD ──
+async function clearAndReload() {
+  if (!confirm('Clear all channels and reload fresh from the playlist?')) return;
+  allChannels = [];
+  saveChannels();
+  currentChannel = null;
+  await loadM3UPT();
+}
 
 // ── ADD MANUAL ──
 function addManual() {

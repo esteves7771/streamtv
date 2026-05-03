@@ -849,14 +849,14 @@ function playChannel(index) {
   loadStream(ch.url, ch.name);
 }
 
-// CORS proxies to try in order
-const CORS_PROXIES = [
-  '', // direct first
-  'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url=',
-];
+// Cloudflare Worker proxy — spoofs Referer server-side
+const WORKER_URL = 'https://streamproxy.esteves7771.workers.dev';
 
-function loadStream(url, name, proxyIndex = 0) {
+function proxyUrl(url) {
+  return WORKER_URL + '/?url=' + encodeURIComponent(url);
+}
+
+function loadStream(url, name, attempt = 0) {
   const video = document.getElementById('video');
   const overlay = document.getElementById('overlay');
   const playerInfo = document.getElementById('playerInfo');
@@ -875,21 +875,25 @@ function loadStream(url, name, proxyIndex = 0) {
   video.src = '';
 
   const isHLS = url.includes('.m3u8') || url.includes('m3u8');
-  const proxy = CORS_PROXIES[proxyIndex] || '';
-  const finalUrl = proxy ? proxy + encodeURIComponent(url) : url;
+  // attempt 0 = via Worker (spoofed Referer), attempt 1 = direct fallback
+  const finalUrl = attempt === 0 ? proxyUrl(url) : url;
+  console.log(attempt === 0 ? 'Via Worker:' : 'Direct fallback:', finalUrl);
 
-  const proxyLabel = proxy ? ` (via proxy ${proxyIndex})` : ' (direct)';
-  console.log('Trying' + proxyLabel + ':', finalUrl);
-
-  // iOS Safari — native HLS, no proxy needed
+  // iOS Safari native HLS
   if (!Hls.isSupported() && video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = url;
-    video.addEventListener('canplay', () => overlay.classList.remove('loading'), { once: true });
-    video.addEventListener('error', () => {
+    video.src = finalUrl;
+    video.addEventListener('canplay', () => {
       overlay.classList.remove('loading');
-      showError('Cannot play on this browser. Try opening in Safari or use the VLC button.');
+      video.play().catch(() => {});
     }, { once: true });
-    video.play().catch(() => {});
+    video.addEventListener('error', () => {
+      if (attempt === 0) {
+        loadStream(url, name, 1);
+      } else {
+        overlay.classList.remove('loading');
+        showError('Cannot play this stream. Try the VLC button.');
+      }
+    }, { once: true });
     return;
   }
 
@@ -899,9 +903,7 @@ function loadStream(url, name, proxyIndex = 0) {
       lowLatencyMode: true,
       maxBufferLength: 30,
       backBufferLength: 60,
-      xhrSetup: (xhr) => {
-        xhr.withCredentials = false;
-      },
+      xhrSetup: xhr => { xhr.withCredentials = false; },
     });
 
     hlsInstance.loadSource(finalUrl);
@@ -914,22 +916,17 @@ function loadStream(url, name, proxyIndex = 0) {
 
     hlsInstance.on(Hls.Events.ERROR, (event, data) => {
       if (data.fatal) {
-        console.warn('HLS fatal error:', data.type, data.details);
+        console.warn('HLS error:', data.type, data.details);
         hlsInstance.destroy();
         hlsInstance = null;
-
-        // Try next proxy
-        const nextProxy = proxyIndex + 1;
-        if (nextProxy < CORS_PROXIES.length) {
-          console.log('Retrying with proxy', nextProxy);
-          overlay.classList.add('loading');
-          loadStream(url, name, nextProxy);
+        if (attempt === 0) {
+          console.log('Worker failed, trying direct...');
+          loadStream(url, name, 1);
         } else {
           overlay.classList.remove('loading');
           showError(
-            '⚠️ Could not load stream directly or via proxy.<br><br>' +
-            'Try the <strong>VLC</strong> button below — it bypasses all restrictions.<br>' +
-            'Or copy the URL and open it in <strong>VLC app</strong> manually.'
+            'Stream failed. The URL may have expired — grab a fresh one from the site.<br><br>' +
+            'Or tap <strong>VLC</strong> to open directly in VLC app.'
           );
         }
       }

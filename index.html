@@ -625,38 +625,63 @@ function playCh(i) {
 }
 
 function loadEmbed(ch) {
-  const overlay   = document.getElementById('overlay');
-  const info      = document.getElementById('playerInfo');
-  const errBox    = document.getElementById('errorBox');
-  const emptyEl   = document.getElementById('emptyPlayer');
-  const videoWrap = document.querySelector('.video-wrap');
-
-  emptyEl.style.display = 'none';
-  info.style.display    = 'block';
-  errBox.style.display  = 'none';
-  overlay.className     = 'video-overlay';
-  document.getElementById('nowName').textContent = ch.name || '—';
+  const info    = document.getElementById('playerInfo');
+  const errBox  = document.getElementById('errorBox');
+  const emptyEl = document.getElementById('emptyPlayer');
 
   // Stop any HLS
   if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
   document.getElementById('video').src = '';
+  document.getElementById('overlay').className = 'video-overlay';
 
-  // Remove any existing embed iframe
-  const old = document.getElementById('embedFrame');
-  if (old) old.remove();
+  // Remove any old iframe
+  const oldFrame = document.getElementById('embedFrame');
+  if (oldFrame) oldFrame.remove();
+  document.getElementById('video').style.display = 'block';
 
-  // Hide native video, show iframe
-  document.getElementById('video').style.display = 'none';
-  videoWrap.style.aspectRatio = 'unset';
-  videoWrap.style.height = '56vw';
+  emptyEl.style.display = 'none';
+  info.style.display    = 'block';
+  errBox.style.display  = 'none';
+  document.getElementById('nowName').textContent = ch.name || '—';
 
-  const iframe = document.createElement('iframe');
-  iframe.id = 'embedFrame';
-  iframe.src = getEmbedUrl(ch.canal);
-  iframe.allow = 'autoplay; fullscreen; encrypted-media';
-  iframe.frameBorder = '0';
-  iframe.style.cssText = 'width:100%;height:100%;display:block;border:none;';
-  videoWrap.appendChild(iframe);
+  // Show open-in-browser card
+  const playerBody = document.querySelector('.player-body');
+
+  // Remove old embed card if any
+  const oldCard = document.getElementById('embedCard');
+  if (oldCard) oldCard.remove();
+
+  const card = document.createElement('div');
+  card.id = 'embedCard';
+  card.style.margin = '20px 16px';
+  card.style.background = 'var(--s1)';
+  card.style.border = '1px solid var(--border2)';
+  card.style.borderRadius = '12px';
+  card.style.padding = '24px 20px';
+  card.style.textAlign = 'center';
+
+  const btn = document.createElement('button');
+  btn.textContent = '▶ Watch Now';
+  btn.style.cssText = 'background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:14px 28px;color:#fff;font-family:Syne,sans-serif;font-weight:700;font-size:15px;cursor:pointer;width:100%';
+  btn.onclick = function() { window.open(getEmbedUrl(currentCh.canal), '_blank'); };
+
+  const icon = document.createElement('div');
+  icon.style.cssText = 'font-size:40px;margin-bottom:12px';
+  icon.textContent = '📺';
+
+  const title = document.createElement('div');
+  title.style.cssText = "font-family:Syne,sans-serif;font-weight:700;font-size:17px;margin-bottom:6px";
+  title.textContent = ch.name || '';
+
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:11px;color:var(--muted);margin-bottom:20px;line-height:1.6';
+  sub.innerHTML = 'Opens in browser with full player.<br>No ads in the player itself.';
+
+  card.appendChild(icon);
+  card.appendChild(title);
+  card.appendChild(sub);
+  card.appendChild(btn);
+  playerBody.insertBefore(card, playerBody.firstChild);
 }
 
 function loadStream(ch, attempt) {
